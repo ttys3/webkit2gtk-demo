@@ -1,0 +1,246 @@
+/*
+ * Copyright (c) 2022 ttyS3
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+use gtk::{prelude::*, Inhibit, Notebook, Window, WindowType};
+
+use webkit2gtk::{
+    traits::{SettingsExt, WebContextExt, WebViewExt},
+    WebContext, WebView,
+};
+use webkit2gtk::{
+    CacheModel, CookieManagerExt, CookiePersistentStorage, UserContentManager, WebContextBuilder,
+    WebViewBuilder, WebsiteDataManager, WebsiteDataManagerBuilder,
+};
+
+use env_logger::{Builder, Target};
+use gtk::{IconSize, Orientation, ReliefStyle};
+use log::LevelFilter;
+use std::collections::HashMap;
+use std::path::Path;
+
+fn main() {
+    init_logger();
+
+    gtk::init().unwrap();
+
+    let window = Window::new(WindowType::Toplevel);
+    window.set_default_size(980, 700);
+
+    let context = WebContext::default().unwrap();
+
+    let notebook = gtk::Notebook::new();
+
+    let url_to_open = [
+        "https://bing.com",
+        "https://html5test.com",
+        "https://github.com",
+        "https://twitter.com",
+        "https://youtube.com",
+        "https://music.163.com",
+    ];
+    url_to_open.iter().for_each(|url| {
+        create_tab_page(&context, &notebook, url);
+    });
+
+    notebook.show_all();
+
+    window.add(&notebook);
+
+    /*let inspector = webview.get_inspector().unwrap();
+    inspector.show();*/
+
+    window.show_all();
+
+    window.connect_delete_event(|_, _| {
+        log::info!("app exiting...");
+        gtk::main_quit();
+        Inhibit(false)
+    });
+
+    gtk::main();
+}
+
+fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str) {
+    let context = WebContext::default().unwrap();
+
+    let website_policies = webkit2gtk::WebsitePoliciesBuilder::new()
+        .autoplay(webkit2gtk::AutoplayPolicy::Allow)
+        .build();
+    let web_context = create_web_context(Path::new("/tmp"));
+    let ucm = UserContentManager::new();
+    let webview = WebViewBuilder::new()
+        .web_context(&web_context)
+        .website_policies(&website_policies)
+        .user_content_manager(&ucm)
+        .build();
+    webview.set_vexpand(true);
+    webview.set_hexpand(true);
+    webview.set_can_focus(true);
+    init_webview_settings(false, &webview);
+
+    // webview.settings().unwrap().set_enable_developer_extras(true);
+    // multiple `settings` found
+    // candidate #1 is defined in an impl of the trait `WebViewExt` for the type `O`
+    // candidate #2 is defined in an impl of the trait `gtk::prelude::WidgetExt` for the type `O`
+    // disambiguate the associated function for candidate #1
+    // WebViewExt::settings(&webview).unwrap().set_enable_developer_extras(true);
+
+    webview.load_uri(url);
+
+    let tab = gtk::Box::new(Orientation::Horizontal, 0);
+    let url_str = url.to_string();
+    let title = url_str.trim_start_matches("https://");
+    tab.pack_start(&gtk::Label::new(Some(title)), false, false, 0);
+    let index = notebook.append_page(&webview, Some(&tab));
+    log::info!(
+        "create_tab_page try add close button, title={} tab_index={}",
+        title,
+        index
+    );
+    // Standard Icon Names https://developer.gnome.org/icon-naming-spec/#names
+    let button = gtk::Button::new();
+    button.add(&gtk::Image::from_icon_name(
+        Some("window-close"),
+        IconSize::Button,
+    ));
+    button.connect_clicked(glib::clone!(@weak notebook as notebook => move |_| {
+        log::info!("close button click, tab_index={}", index);
+
+        webview.terminate_web_process();
+
+        notebook.remove_page(Some(index));
+    }));
+    tab.pack_start(&button, false, false, 0);
+    tab.show_all();
+}
+
+fn init_webview_settings(forward_console_log: bool, webview: &WebView) {
+    let settings = WebViewExt::settings(webview).unwrap();
+    // enable developer console
+    settings.set_enable_developer_extras(true);
+    // forward web console message to Terminal
+    if forward_console_log {
+        settings.set_enable_write_console_messages_to_stdout(true);
+        // Whether to draw compositing borders and repaint counters on layers drawn with accelerated compositing.
+        // This is useful for debugging issues related to web content that is composited with the GPU.
+        // see https://webkitgtk.org/reference/webkit2gtk/unstable/WebKitSettings.html#WebKitSettings--draw-compositing-indicators
+        settings.set_draw_compositing_indicators(true);
+    }
+
+    // Enable webgl, webaudio, canvas features
+    settings.set_enable_webgl(true);
+    settings.set_enable_webaudio(true);
+    // WebKitSettings:enable-accelerated-2d-canvas has been deprecated since version 2.32. and should not be used in newly-written code.
+    // see https://webkitgtk.org/reference/webkit2gtk/unstable/WebKitSettings.html#WebKitSettings--enable-accelerated-2d-canvas
+    // settings.set_enable_accelerated_2d_canvas(true);
+
+    // disable Hardware Acceleration due to canvas `transform: translateZ(-1px)` style make text blurry
+    settings.set_hardware_acceleration_policy(webkit2gtk::HardwareAccelerationPolicy::Always);
+
+    // Enable App cache
+    settings.set_enable_offline_web_application_cache(true);
+    settings.set_enable_page_cache(true);
+
+    settings.set_allow_universal_access_from_file_urls(true);
+    settings.set_allow_file_access_from_file_urls(true);
+    settings.set_allow_modal_dialogs(true);
+    settings.set_allow_top_navigation_to_data_urls(true);
+
+    settings.set_enable_html5_database(true);
+    settings.set_enable_html5_local_storage(true);
+    settings.set_enable_java(false);
+
+    // https://webkitgtk.org/reference/webkit2gtk/stable/method.Settings.set_enable_webrtc.html
+    // webkit_settings_set_enable_webrtc Available since: 2.38
+    // current rust webkit2gtk version is 0.18, which is 2.36
+
+    settings.set_enable_media(true);
+    settings.set_enable_media_capabilities(true);
+    settings.set_enable_media_stream(true);
+    settings.set_enable_mediasource(true);
+    settings.set_enable_mock_capture_devices(true);
+    settings.set_enable_encrypted_media(true);
+    settings.set_media_playback_allows_inline(true);
+
+    settings.set_enable_smooth_scrolling(true);
+    settings.set_enable_javascript(true);
+    settings.set_javascript_can_access_clipboard(true);
+    settings.set_javascript_can_open_windows_automatically(true);
+
+    // https://webkitgtk.org/reference/webkit2gtk/unstable/WebKitSettings.html#WebKitSettings--media-playback-requires-user-gesture
+    // https://webkit.org/blog/7734/auto-play-policy-changes-for-macos/
+    // fix js error:
+    // Unhandled Promise Rejection: NotAllowedError: The request is not allowed by the user agent or the platform in the current context,
+    // possibly because the user denied permission.
+    settings.set_media_playback_requires_user_gesture(false);
+
+    // font
+    settings.set_default_charset("UTF-8");
+    settings.set_default_font_family("Noto Sans CJK SC");
+    settings.set_serif_font_family("Noto Serif CJK SC");
+    settings.set_sans_serif_font_family("Noto Sans CJK SC");
+}
+
+fn create_web_context(base_dir: &Path) -> WebContext {
+    let web_data_manager = new_web_data_manager(base_dir);
+
+    let web_context = WebContextBuilder::new()
+        .website_data_manager(&web_data_manager)
+        .build();
+
+    if let Some(cm) = web_context.cookie_manager() {
+        CookieManagerExt::set_persistent_storage(
+            &cm,
+            base_dir.join("cookie").join("cookie.txt").to_str().unwrap(),
+            CookiePersistentStorage::Text,
+        );
+    }
+    log::info!("done initialize cookie persistent storage");
+
+    web_context.set_cache_model(CacheModel::WebBrowser);
+
+    web_context
+}
+
+fn new_web_data_manager(base_dir: &Path) -> WebsiteDataManager {
+    // https://webkitgtk.org/reference/webkit2gtk/stable/class.WebsiteDataManager.html
+    // websql_directory is deprecated since 2.24, WebSQL is no longer supported. Use IndexedDB instead.
+    // see https://valadoc.org/webkit2gtk-4.0/WebKit.WebsiteDataManager.websql_directory.html
+    let web_data_manager = WebsiteDataManagerBuilder::new()
+        .base_cache_directory(base_dir.join("cache").to_str().unwrap())
+        .base_data_directory(base_dir.join("data").to_str().unwrap())
+        .disk_cache_directory(base_dir.join("disk").to_str().unwrap())
+        .hsts_cache_directory(base_dir.join("hsts").to_str().unwrap())
+        .indexeddb_directory(base_dir.join("db").to_str().unwrap())
+        .local_storage_directory(base_dir.join("storage").to_str().unwrap())
+        .offline_application_cache_directory(base_dir.join("offline").to_str().unwrap())
+        .build();
+    web_data_manager
+}
+
+pub fn init_logger() {
+    // https://rust-lang-nursery.github.io/rust-cookbook/development_tools/debugging/log.html
+    Builder::new()
+        .filter_level(LevelFilter::Debug) // set default level
+        .parse_default_env() // then, if exists, respect the env config
+        .target(Target::Stdout)
+        .init();
+}

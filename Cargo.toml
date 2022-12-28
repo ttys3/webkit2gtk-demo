@@ -1,0 +1,16 @@
+[package]
+name = "webkit2gtk-demo"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+glib = "0.15.12"
+gdk = "0.15.4"
+gio = "0.15.12"
+gio-sys = "0.15.10"
+gtk = "0.15.5"
+webkit2gtk = { version = "0.18.2", features = [ "v2_36" ] }
+env_logger = "0.10.0"
+log = "0.4.17"
