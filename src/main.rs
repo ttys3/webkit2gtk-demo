@@ -58,8 +58,8 @@ fn main() {
         let notebook = gtk::Notebook::new();
 
         let url_to_open = [
-            "https://bing.com",
             "https://html5test.com",
+            "https://bing.com",
             "https://github.com",
             "https://twitter.com",
             "https://youtube.com",
@@ -181,10 +181,6 @@ fn init_webview_settings(forward_console_log: bool, webview: &WebView) {
 
     settings.set_enable_html5_database(true);
     settings.set_enable_html5_local_storage(true);
-
-    // https://webkitgtk.org/reference/webkit2gtk/stable/method.Settings.set_enable_webrtc.html
-    // webkit_settings_set_enable_webrtc Available since: 2.38
-    // current rust webkit2gtk version is 0.18, which is 2.36
 
     settings.set_enable_media(true);
     settings.set_enable_media_capabilities(true);
