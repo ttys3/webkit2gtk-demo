@@ -125,7 +125,7 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
     button.connect_clicked(glib::clone!(@weak notebook as notebook => move |_| {
         log::info!("close button click, tab_index={}", index);
 
-        webview.terminate_web_process();
+        // webview.terminate_web_process();
 
         notebook.remove_page(Some(index));
     }));
