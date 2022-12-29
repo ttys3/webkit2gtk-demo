@@ -19,21 +19,32 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-use gtk::{prelude::*, Inhibit, Notebook, Window, WindowType};
+use gtk::{prelude::*, Inhibit, Notebook, Window, ApplicationWindow};
 
 use webkit2gtk::{
-    traits::{SettingsExt, WebContextExt, WebViewExt},
     WebContext, WebView,
 };
 use webkit2gtk::{
-    CacheModel, CookieManagerExt, CookiePersistentStorage, UserContentManager, WebContextBuilder,
-    WebViewBuilder, WebsiteDataManager, WebsiteDataManagerBuilder,
+    CacheModel, CookiePersistentStorage, UserContentManager, WebsiteDataManager,
 };
 
+use webkit2gtk::prelude::CookieManagerExt;
+use webkit2gtk::prelude::WebkitSettingsExt;
+use webkit2gtk::prelude::WebContextExt;
+use webkit2gtk::prelude::WebViewExt;
+
+use webkit2gtk::builders::{WebContextBuilder, WebViewBuilder, WebsiteDataManagerBuilder};
+use webkit2gtk::prelude::WebsitePoliciesExt;
+
+use gtk::prelude::GtkApplicationExt;
+use gtk::prelude::GtkWindowExt;
+use gtk::prelude::CellAreaExt;
+use gtk::prelude::CellLayoutExt;
+use gtk::glib::object::Cast;
+
 use env_logger::{Builder, Target};
-use gtk::{IconSize, Orientation, ReliefStyle};
+use gtk::{Orientation};
 use log::LevelFilter;
-use std::collections::HashMap;
 use std::path::Path;
 
 fn main() {
@@ -41,7 +52,9 @@ fn main() {
 
     gtk::init().unwrap();
 
-    let window = Window::new(WindowType::Toplevel);
+    let app = gtk::Application::builder().build();
+
+    let window = ApplicationWindow::new(&app);
     window.set_default_size(980, 700);
 
     let context = WebContext::default().unwrap();
@@ -61,30 +74,32 @@ fn main() {
         create_tab_page(&context, &notebook, url, &mut tabs);
     });
 
-    notebook.show_all();
+    notebook.show();
 
-    window.add(&notebook);
+    window.add(&notebook.upcast());
 
     /*let inspector = webview.get_inspector().unwrap();
     inspector.show();*/
 
-    window.show_all();
+    window.show();
 
-    window.connect_delete_event(|_, _| {
-        log::info!("app exiting...");
-        gtk::main_quit();
-        Inhibit(false)
-    });
+    // window.connect_delete_event(|_, _| {
+    //     log::info!("app exiting...");
+    //     gtk::quit();
+    //     Inhibit(false)
+    // });
 
-    gtk::main();
+
+    app.activate();
+    // app.add_window(&window);
+    app.run();
 }
 
 fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &mut Vec<gtk::Box>) {
     let context = WebContext::default().unwrap();
 
-    let website_policies = webkit2gtk::WebsitePoliciesBuilder::new()
-        .autoplay(webkit2gtk::AutoplayPolicy::Allow)
-        .build();
+    // @TODO AutoplayPolicy::Allow
+    let website_policies = webkit2gtk::WebsitePolicies::new();
     let web_context = create_web_context(Path::new("/tmp"));
     let ucm = UserContentManager::new();
     let webview = WebViewBuilder::new()
@@ -109,7 +124,7 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
     let tab = gtk::Box::new(Orientation::Horizontal, 0);
     let url_str = url.to_string();
     let title = url_str.trim_start_matches("https://");
-    tab.pack_start(&gtk::Label::new(Some(title)), false, false, 0);
+    tab.pack_start(&gtk::Label::new(Some(title)).upcast(), false, false, 0);
     let index = notebook.append_page(&webview, Some(&tab));
     log::info!(
         "create_tab_page try add close button, title={} tab_index={}",
@@ -118,10 +133,7 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
     );
     // Standard Icon Names https://developer.gnome.org/icon-naming-spec/#names
     let button = gtk::Button::new();
-    button.add(&gtk::Image::from_icon_name(
-        Some("window-close"),
-        IconSize::Button,
-    ));
+    button.add(&gtk::Image::from_icon_name("window-close").upcast());
     button.connect_clicked(glib::clone!(@weak notebook as notebook => move |_| {
         log::info!("close button click, tab_index={}", index);
 
@@ -129,8 +141,8 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
 
         notebook.remove_page(Some(index));
     }));
-    tab.pack_start(&button, false, false, 0);
-    tab.show_all();
+    tab.pack_start(&button.upcast(), false, false, 0);
+    tab.show();
     tabs.push(tab);
 }
 

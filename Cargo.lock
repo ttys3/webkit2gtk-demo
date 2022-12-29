@@ -502,7 +502,7 @@ dependencies = [
 [[package]]
 name = "javascriptcore5-rs"
 version = "0.15.3"
-source = "git+https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs#52625d8cb9f93d46977d746937df55ad26f900b7"
+source = "git+https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs?branch=master#52625d8cb9f93d46977d746937df55ad26f900b7"
 dependencies = [
  "bitflags",
  "glib",
@@ -512,7 +512,7 @@ dependencies = [
 [[package]]
 name = "javascriptcore5-rs-sys"
 version = "0.3.0"
-source = "git+https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs#52625d8cb9f93d46977d746937df55ad26f900b7"
+source = "git+https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs?branch=master#52625d8cb9f93d46977d746937df55ad26f900b7"
 dependencies = [
  "glib-sys 0.17.0",
  "gobject-sys 0.17.0",
@@ -860,7 +860,7 @@ dependencies = [
 [[package]]
 name = "webkit2gtk5"
 version = "0.15.1"
-source = "git+https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs#52625d8cb9f93d46977d746937df55ad26f900b7"
+source = "git+https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs?branch=master#52625d8cb9f93d46977d746937df55ad26f900b7"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -877,7 +877,7 @@ dependencies = [
 [[package]]
 name = "webkit2gtk5-sys"
 version = "0.15.0"
-source = "git+https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs#52625d8cb9f93d46977d746937df55ad26f900b7"
+source = "git+https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs?branch=master#52625d8cb9f93d46977d746937df55ad26f900b7"
 dependencies = [
  "bitflags",
  "cairo-sys-rs",

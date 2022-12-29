@@ -10,6 +10,6 @@ glib = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 gdk = { git = "https://github.com/gtk-rs/gtk4-rs", package = "gdk4"}
 gio = { git = "https://github.com/gtk-rs/gtk-rs-core" }
 gtk = { git = "https://github.com/gtk-rs/gtk4-rs", package = "gtk4"}
-webkit2gtk = { git = "https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs", package = "webkit2gtk5", version = "0.15.1", features = [ "v2_38" ] }
+webkit2gtk = { git = "https://gitlab.gnome.org/World/Rust/webkit2gtk5-rs", package = "webkit2gtk5", features = [ "v2_38" ], branch = "master" }
 env_logger = "0.10.0"
 log = "0.4.17"
