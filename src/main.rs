@@ -20,8 +20,7 @@
  */
 
 use gtk::{
-    prelude::*, ApplicationWindow, CellLayout, CellRenderer, Inhibit, Notebook, Widget, Window,
-};
+    prelude::*, ApplicationWindow, Inhibit, Notebook, Widget};
 
 use webkit2gtk::{CacheModel, CookiePersistentStorage, UserContentManager, WebsiteDataManager};
 use webkit2gtk::{WebContext, WebView};
@@ -32,13 +31,9 @@ use webkit2gtk::prelude::WebViewExt;
 use webkit2gtk::prelude::WebkitSettingsExt;
 
 use webkit2gtk::builders::{WebContextBuilder, WebViewBuilder, WebsiteDataManagerBuilder};
-use webkit2gtk::prelude::WebsitePoliciesExt;
 
 use glib::object::Cast;
-use glib::object::ObjectExt;
-use gtk::prelude::CellAreaExt;
-use gtk::prelude::CellLayoutExt;
-use gtk::prelude::GtkApplicationExt;
+// use gtk::prelude::GtkApplicationExt;
 use gtk::prelude::GtkWindowExt;
 
 use env_logger::{Builder, Target};
@@ -59,8 +54,6 @@ fn main() {
         window.set_title(Some("webkit2gtk-rs-demo"));
         window.set_default_size(980, 700);
 
-        let context = WebContext::default().unwrap();
-
         let mut tabs = Vec::<gtk::Box>::new();
         let notebook = gtk::Notebook::new();
 
@@ -73,7 +66,7 @@ fn main() {
             "https://music.163.com",
         ];
         url_to_open.iter().for_each(|url| {
-            create_tab_page(&context, &notebook, url, &mut tabs);
+            create_tab_page(&notebook, url, &mut tabs);
         });
 
         notebook.show();
@@ -102,9 +95,7 @@ fn main() {
     app.run();
 }
 
-fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &mut Vec<gtk::Box>) {
-    let context = WebContext::default().unwrap();
-
+fn create_tab_page(notebook: &Notebook, url: &str, tabs: &mut Vec<gtk::Box>) {
     // @TODO new_with_policies() unimplemented, we need AutoplayPolicy::Allow
     // https://webkitgtk.org/reference/webkit2gtk/stable/ctor.WebsitePolicies.new_with_policies.html
     let website_policies = webkit2gtk::WebsitePolicies::new();
@@ -133,7 +124,7 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
     let url_str = url.to_string();
     let title = url_str.trim_start_matches("https://");
     // the method `pack_start` exists for struct `gtk4::Box`, but its trait bounds were not satisfied
-    let _ = tab.append(&gtk::Label::new(Some(title)).upcast::<Widget>());
+    tab.append(&gtk::Label::new(Some(title)).upcast::<Widget>());
     let index = notebook.append_page(&webview, Some(&tab));
     log::info!(
         "create_tab_page try add close button, title={} tab_index={}",
@@ -150,7 +141,7 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
         notebook.remove_page(Some(index));
     }));
     // prepend, append
-    let _ = tab.append(&button);
+    tab.append(&button);
     tab.show();
     tabs.push(tab);
 }
@@ -189,7 +180,6 @@ fn init_webview_settings(forward_console_log: bool, webview: &WebView) {
 
     settings.set_enable_html5_database(true);
     settings.set_enable_html5_local_storage(true);
-    settings.set_enable_java(false);
 
     // https://webkitgtk.org/reference/webkit2gtk/stable/method.Settings.set_enable_webrtc.html
     // webkit_settings_set_enable_webrtc Available since: 2.38
