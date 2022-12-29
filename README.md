@@ -12,6 +12,8 @@ sudo dnf install -y gtk4-devel　javascriptcoregtk5.0-devel　webkit2gtk5.0-deve
 
 ## docs
 
+https://gitlab.gnome.org/World/Rust/gtk-rust-template/-/tree/master/
+
 https://world.pages.gitlab.gnome.org/Rust/webkit2gtk5-rs/stable/latest/docs/
 
 https://world.pages.gitlab.gnome.org/Rust/webkit2gtk5-rs/stable/latest/docs/webkit2gtk/index.html
