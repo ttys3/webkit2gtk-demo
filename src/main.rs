@@ -19,31 +19,30 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-use gtk::{prelude::*, Inhibit, Notebook, Window, ApplicationWindow};
+use gtk::{
+    prelude::*, ApplicationWindow, CellLayout, CellRenderer, Inhibit, Notebook, Widget, Window,
+};
 
-use webkit2gtk::{
-    WebContext, WebView,
-};
-use webkit2gtk::{
-    CacheModel, CookiePersistentStorage, UserContentManager, WebsiteDataManager,
-};
+use webkit2gtk::{CacheModel, CookiePersistentStorage, UserContentManager, WebsiteDataManager};
+use webkit2gtk::{WebContext, WebView};
 
 use webkit2gtk::prelude::CookieManagerExt;
-use webkit2gtk::prelude::WebkitSettingsExt;
 use webkit2gtk::prelude::WebContextExt;
 use webkit2gtk::prelude::WebViewExt;
+use webkit2gtk::prelude::WebkitSettingsExt;
 
 use webkit2gtk::builders::{WebContextBuilder, WebViewBuilder, WebsiteDataManagerBuilder};
 use webkit2gtk::prelude::WebsitePoliciesExt;
 
-use gtk::prelude::GtkApplicationExt;
-use gtk::prelude::GtkWindowExt;
+use glib::object::Cast;
+use glib::object::ObjectExt;
 use gtk::prelude::CellAreaExt;
 use gtk::prelude::CellLayoutExt;
-use gtk::glib::object::Cast;
+use gtk::prelude::GtkApplicationExt;
+use gtk::prelude::GtkWindowExt;
 
 use env_logger::{Builder, Target};
-use gtk::{Orientation};
+use gtk::Orientation;
 use log::LevelFilter;
 use std::path::Path;
 
@@ -52,46 +51,54 @@ fn main() {
 
     gtk::init().unwrap();
 
-    let app = gtk::Application::builder().build();
+    // let app = gtk::Application::builder().build();
+    let app = gtk::Application::new(Some("com.github.gtk-rs.examples"), Default::default());
 
-    let window = ApplicationWindow::new(&app);
-    window.set_default_size(980, 700);
+    app.connect_activate(|app| {
+        let window = ApplicationWindow::new(app);
+        window.set_title(Some("webkit2gtk-rs-demo"));
+        window.set_default_size(980, 700);
 
-    let context = WebContext::default().unwrap();
+        let context = WebContext::default().unwrap();
 
-    let mut tabs = Vec::<gtk::Box>::new();
-    let notebook = gtk::Notebook::new();
+        let mut tabs = Vec::<gtk::Box>::new();
+        let notebook = gtk::Notebook::new();
 
-    let url_to_open = [
-        "https://bing.com",
-        "https://html5test.com",
-        "https://github.com",
-        "https://twitter.com",
-        "https://youtube.com",
-        "https://music.163.com",
-    ];
-    url_to_open.iter().for_each(|url| {
-        create_tab_page(&context, &notebook, url, &mut tabs);
+        let url_to_open = [
+            "https://bing.com",
+            "https://html5test.com",
+            "https://github.com",
+            "https://twitter.com",
+            "https://youtube.com",
+            "https://music.163.com",
+        ];
+        url_to_open.iter().for_each(|url| {
+            create_tab_page(&context, &notebook, url, &mut tabs);
+        });
+
+        notebook.show();
+        // let v_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        // v_box.pack_start(&notebook.upcast(), false, false, 0);
+
+        window.set_child(Some(&notebook.upcast::<Widget>()));
+
+        /*let inspector = webview.get_inspector().unwrap();
+        inspector.show();*/
+
+        window.show();
+
+        // ::delete-event signal has been remove in gtk4
+        // see https://docs.gtk.org/gtk4/migrating-3to4.html#stop-using-gtkwidget-event-signals
+        // If you were using ::delete-event to present a confirmation when using the close button of a window,
+        // you should use the GtkWindow::close-request signal.
+        // https://gtk-rs.org/gtk4-rs/stable/latest/docs/gtk4/prelude/trait.GtkWindowExt.html#tymethod.connect_close_request
+        window.connect_close_request(|win| {
+            log::info!("app exiting...");
+            win.application().unwrap().quit();
+            Inhibit(false)
+        });
     });
 
-    notebook.show();
-
-    window.add(&notebook.upcast());
-
-    /*let inspector = webview.get_inspector().unwrap();
-    inspector.show();*/
-
-    window.show();
-
-    // window.connect_delete_event(|_, _| {
-    //     log::info!("app exiting...");
-    //     gtk::quit();
-    //     Inhibit(false)
-    // });
-
-
-    app.activate();
-    // app.add_window(&window);
     app.run();
 }
 
@@ -124,7 +131,8 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
     let tab = gtk::Box::new(Orientation::Horizontal, 0);
     let url_str = url.to_string();
     let title = url_str.trim_start_matches("https://");
-    tab.pack_start(&gtk::Label::new(Some(title)).upcast(), false, false, 0);
+    // the method `pack_start` exists for struct `gtk4::Box`, but its trait bounds were not satisfied
+    let _ = tab.append(&gtk::Label::new(Some(title)).upcast::<Widget>());
     let index = notebook.append_page(&webview, Some(&tab));
     log::info!(
         "create_tab_page try add close button, title={} tab_index={}",
@@ -132,8 +140,7 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
         index
     );
     // Standard Icon Names https://developer.gnome.org/icon-naming-spec/#names
-    let button = gtk::Button::new();
-    button.add(&gtk::Image::from_icon_name("window-close").upcast());
+    let button = gtk::Button::from_icon_name("window-close");
     button.connect_clicked(glib::clone!(@weak notebook as notebook => move |_| {
         log::info!("close button click, tab_index={}", index);
 
@@ -141,7 +148,8 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &
 
         notebook.remove_page(Some(index));
     }));
-    tab.pack_start(&button.upcast(), false, false, 0);
+    // prepend, append
+    let _ = tab.append(&button);
     tab.show();
     tabs.push(tab);
 }
