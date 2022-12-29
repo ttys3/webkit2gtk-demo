@@ -192,6 +192,7 @@ fn init_webview_settings(forward_console_log: bool, webview: &WebView) {
     settings.set_enable_mock_capture_devices(true);
     settings.set_enable_encrypted_media(true);
     settings.set_media_playback_allows_inline(true);
+    settings.set_enable_webrtc(true);
 
     settings.set_enable_smooth_scrolling(true);
     settings.set_enable_javascript(true);
