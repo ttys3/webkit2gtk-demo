@@ -133,6 +133,7 @@ fn create_tab_page(notebook: &Notebook, url: &str, tabs: &mut Vec<gtk::Box>) {
     );
     // Standard Icon Names https://developer.gnome.org/icon-naming-spec/#names
     let button = gtk::Button::from_icon_name("window-close");
+    button.set_has_frame(false);
     button.connect_clicked(glib::clone!(@weak notebook as notebook => move |_| {
         log::info!("close button click, tab_index={}", index);
 
