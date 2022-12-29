@@ -46,6 +46,7 @@ fn main() {
 
     let context = WebContext::default().unwrap();
 
+    let mut tabs = Vec::<gtk::Box>::new();
     let notebook = gtk::Notebook::new();
 
     let url_to_open = [
@@ -57,7 +58,7 @@ fn main() {
         "https://music.163.com",
     ];
     url_to_open.iter().for_each(|url| {
-        create_tab_page(&context, &notebook, url);
+        create_tab_page(&context, &notebook, url, &mut tabs);
     });
 
     notebook.show_all();
@@ -78,7 +79,7 @@ fn main() {
     gtk::main();
 }
 
-fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str) {
+fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &mut Vec<gtk::Box>) {
     let context = WebContext::default().unwrap();
 
     let website_policies = webkit2gtk::WebsitePoliciesBuilder::new()
@@ -130,6 +131,7 @@ fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str) {
     }));
     tab.pack_start(&button, false, false, 0);
     tab.show_all();
+    tabs.push(tab);
 }
 
 fn init_webview_settings(forward_console_log: bool, webview: &WebView) {
