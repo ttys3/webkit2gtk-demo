@@ -105,7 +105,8 @@ fn main() {
 fn create_tab_page(context: &WebContext, notebook: &Notebook, url: &str, tabs: &mut Vec<gtk::Box>) {
     let context = WebContext::default().unwrap();
 
-    // @TODO AutoplayPolicy::Allow
+    // @TODO new_with_policies() unimplemented, we need AutoplayPolicy::Allow
+    // https://webkitgtk.org/reference/webkit2gtk/stable/ctor.WebsitePolicies.new_with_policies.html
     let website_policies = webkit2gtk::WebsitePolicies::new();
     let web_context = create_web_context(Path::new("/tmp"));
     let ucm = UserContentManager::new();
