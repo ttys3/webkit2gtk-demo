@@ -19,8 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-use gtk::{
-    prelude::*, ApplicationWindow, Inhibit, Notebook, Widget};
+use gtk::{prelude::*, ApplicationWindow, Inhibit, Notebook, Widget};
 
 use webkit2gtk::{CacheModel, CookiePersistentStorage, UserContentManager, WebsiteDataManager};
 use webkit2gtk::{WebContext, WebView};
@@ -138,8 +137,13 @@ fn create_tab_page(notebook: &Notebook, url: &str, tabs: &mut Vec<gtk::Box>) {
         log::info!("close button click, tab_index={}", index);
 
         // webview.terminate_web_process();
+        if let Some(index) = notebook.page_num(&webview) {
+            notebook.remove_page(Some(index));
+            log::info!("remove page, page_num={}", index)
+        } else {
+            log::error!("page_num for this webview not found");
+        }
 
-        notebook.remove_page(Some(index));
     }));
     // prepend, append
     tab.append(&button);
